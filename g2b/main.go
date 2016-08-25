@@ -5,22 +5,24 @@ import (
 	"net"
 	"os"
 
+	//	"github.com/karasz/go2ban/jail"
+	"github.com/karasz/go2ban/common"
 	"github.com/karasz/go2ban/utils"
 )
 
 func init() {
 	utils.TrapSignals()
-	os.Remove(utils.GoSock)
+	os.Remove(common.GoSock)
 }
 
 func main() {
 
-	l, err := net.ListenUnix("unix", &net.UnixAddr{utils.GoSock, "unix"})
+	l, err := net.ListenUnix("unix", &net.UnixAddr{common.GoSock, "unix"})
 	if err != nil {
 		fmt.Println("listen error:", err)
 	}
 
-	defer os.Remove(utils.GoSock)
+	defer os.Remove(common.GoSock)
 
 	for {
 		fd, err := l.AcceptUnix()

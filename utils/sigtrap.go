@@ -2,12 +2,11 @@ package utils
 
 import (
 	"fmt"
+	"github.com/karasz/go2ban/common"
 	"os"
 	"os/signal"
 	"syscall"
 )
-
-const GoSock = "/var/run/go2ban/socket"
 
 func TrapSignals() {
 	go func() {
@@ -18,12 +17,12 @@ func TrapSignals() {
 			switch sig {
 			case syscall.SIGTERM, syscall.SIGINT:
 				fmt.Println("[INFO] SIGTERM or SIGINT: Terminating process")
-				os.Remove(GoSock)
+				os.Remove(common.GoSock)
 				os.Exit(0)
 
 			case syscall.SIGQUIT:
 				fmt.Println("[INFO] SIGQUIT: Shutting down")
-				os.Remove(GoSock)
+				os.Remove(common.GoSock)
 				os.Exit(1)
 
 			case syscall.SIGHUP:

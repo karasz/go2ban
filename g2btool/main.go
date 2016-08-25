@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/karasz/go2ban/utils"
+	"github.com/karasz/go2ban/common"
 )
 
 func main() {
 	conn, err := net.DialUnix("unix", nil,
-		&net.UnixAddr{utils.GoSock, "unix"})
+		&net.UnixAddr{common.GoSock, "unix"})
 	if err != nil {
 		panic(err)
 	}
