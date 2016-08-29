@@ -7,7 +7,7 @@ type Jail struct {
 
 func NewJail(filename string) *Jail {
 	return &Jail{
-		Logreader: NewLogReader(filename, 0),
+		Logreader: NewLogReader(filename),
 		Enabled:   enabled,
 	}
 }

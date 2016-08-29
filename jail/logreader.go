@@ -9,16 +9,14 @@ import (
 type LogReader struct {
 	filename string
 	file     *os.File
-	offset   int64
 	reader   *bufio.Reader
 	Lines    chan string
 	Errors   chan error
 }
 
-func NewLogReader(filename string, offset int64) *LogReader {
+func NewLogReader(filename string) *LogReader {
 	return &LogReader{
 		filename: filename,
-		offset:   offset,
 		Lines:    make(chan string),
 		Errors:   make(chan error),
 	}
@@ -56,8 +54,4 @@ func (l *LogReader) Run() {
 			break
 		}
 	}
-}
-
-func (l *LogReadeer) Reset() {
-	l.offset = 0
 }
