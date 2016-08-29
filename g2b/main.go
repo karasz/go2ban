@@ -5,8 +5,8 @@ import (
 	"net"
 	"os"
 
-	//	"github.com/karasz/go2ban/jail"
 	"github.com/karasz/go2ban/common"
+	//	"github.com/karasz/go2ban/jail"
 	"github.com/karasz/go2ban/utils"
 )
 

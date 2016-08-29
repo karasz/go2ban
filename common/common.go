@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path"
+	"strings"
 )
 
 const GoSock = "/var/run/go2ban/socket"
@@ -31,4 +33,13 @@ func SameLog(file string, sum string) bool {
 		return true
 	}
 	return false
+}
+
+func Basename(s string) string {
+	base := path.Base(s)
+	n := strings.LastIndexByte(base, '.')
+	if n >= 0 {
+		return base[:n]
+	}
+	return base
 }

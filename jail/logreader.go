@@ -2,7 +2,6 @@ package jail
 
 import (
 	"bufio"
-	"io"
 	"os"
 )
 
@@ -48,7 +47,7 @@ func (l *LogReader) Run() {
 	}
 
 	for {
-		er = l.readLine()
+		er := l.readLine()
 		if er != nil {
 			l.Errors <- er
 			break
