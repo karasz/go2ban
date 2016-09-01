@@ -2,54 +2,53 @@ package jail
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 )
 
-type LogReader struct {
+type logReader struct {
 	filename string
 	file     *os.File
 	reader   *bufio.Reader
-	Lines    chan string
-	Errors   chan error
+	lines    chan string
+	errors   chan error
 }
 
-func NewLogReader(filename string) *LogReader {
-	return &LogReader{
+func newLogReader(filename string) *logReader {
+	f, err := os.Open(filename)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	r := bufio.NewReader(f)
+
+	return &logReader{
 		filename: filename,
-		Lines:    make(chan string),
-		Errors:   make(chan error),
+		file:     f,
+		reader:   r,
+		lines:    make(chan string),
+		errors:   make(chan error),
 	}
 }
 
-func (l *LogReader) readLine() error {
+func (l *logReader) readLine() error {
 	line, err := l.reader.ReadString('\n')
 	if err != nil {
 		return err
 	}
 
 	if line != "" {
-		l.Lines <- line
+		l.lines <- line
 	}
 	return nil
 }
 
-func (l *LogReader) Run() {
-	file, err := os.Open(l.filename)
-	defer file.Close()
-
-	if err != nil && !os.IsNotExist(err) {
-		l.Errors <- err
-	}
-
-	if err == nil {
-		l.file = file
-		l.reader = bufio.NewReader(file)
-	}
-
+func (l *logReader) run() {
 	for {
-		er := l.readLine()
-		if er != nil {
-			l.Errors <- er
+		err := l.readLine()
+		if err != nil {
+			l.errors <- err
 			break
 		}
 	}
