@@ -32,24 +32,17 @@ func newLogReader(filename string) *logReader {
 	}
 }
 
-func (l *logReader) readLine() error {
+func (l *logReader) readLine() {
 	line, err := l.reader.ReadString('\n')
 	if err != nil {
-		return err
+		go func() {
+			l.errors <- err
+		}()
 	}
 
 	if line != "" {
-		l.lines <- line
-	}
-	return nil
-}
-
-func (l *logReader) run() {
-	for {
-		err := l.readLine()
-		if err != nil {
-			l.errors <- err
-			break
-		}
+		go func() {
+			l.lines <- line
+		}()
 	}
 }

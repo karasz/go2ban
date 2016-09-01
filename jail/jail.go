@@ -1,10 +1,12 @@
 package jail
 
 import (
+	"fmt"
 	"github.com/karasz/go2ban/common"
 	"github.com/naoina/toml"
 	"io/ioutil"
 	"os"
+	"regexp"
 )
 
 type configJail struct {
@@ -21,13 +23,13 @@ type configJail struct {
 type Jail struct {
 	Name        string
 	LogFile     string
-	Regexp      []string
+	Regexp      []*regexp.Regexp
 	MaxFail     int
 	TimeVal     int
 	ActionBan   string
 	ActionUnBan string
 	Enabled     bool
-	logreader   *LogReader
+	logreader   *logReader
 }
 
 func NewJail(jailfile string) *Jail {
@@ -45,15 +47,47 @@ func NewJail(jailfile string) *Jail {
 		panic(err)
 	}
 
+	rg := make([]*regexp.Regexp, 0)
+	for _, v := range config.Regexp {
+		rr := regexp.MustCompile(v)
+		rg = append(rg, rr)
+
+	}
 	return &Jail{
 		Name:        common.Basename(jailfile),
-		logreader:   NewLogReader(config.LogFile),
+		logreader:   newLogReader(config.LogFile),
 		LogFile:     config.LogFile,
-		Regexp:      config.Regexp,
+		Regexp:      rg,
 		MaxFail:     config.MaxFail,
 		TimeVal:     config.TimeVal,
 		ActionBan:   config.ActionBan,
 		ActionUnBan: config.ActionUnBan,
 		Enabled:     config.Enabled,
 	}
+}
+
+func (j *Jail) Run() {
+	if j.Enabled {
+	loop:
+		for {
+			j.logreader.readLine()
+			select {
+			case _ = <-j.logreader.errors:
+				break loop
+			case z := <-j.logreader.lines:
+				if j.matchLine(z) {
+					fmt.Println(z)
+				}
+			}
+		}
+	}
+}
+
+func (j *Jail) matchLine(line string) bool {
+	for _, z := range j.Regexp {
+		if z.MatchString(line) {
+			return true
+		}
+	}
+	return false
 }
