@@ -72,22 +72,31 @@ func (j *Jail) Run() {
 		for {
 			j.logreader.readLine()
 			select {
-			case _ = <-j.logreader.errors:
+			case err := <-j.logreader.errors:
+				fmt.Println(err)
 				break loop
 			case z := <-j.logreader.lines:
-				if j.matchLine(z) {
-					fmt.Println(z)
+				if q, ok := j.matchLine(z); ok {
+					fmt.Println(q)
 				}
 			}
 		}
 	}
 }
 
-func (j *Jail) matchLine(line string) bool {
+func (j *Jail) matchLine(line string) (map[string]string, bool) {
+	result := make(map[string]string)
 	for _, z := range j.Regexp {
-		if z.MatchString(line) {
-			return true
+		match := z.FindStringSubmatch(line)
+		if match != nil {
+			for i, name := range z.SubexpNames() {
+				if i == 0 || name == "" {
+					continue
+				}
+				result[name] = match[i]
+			}
+			return result, true
 		}
 	}
-	return false
+	return result, false
 }
