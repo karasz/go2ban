@@ -46,3 +46,11 @@ func (l *logReader) readLine() {
 		}()
 	}
 }
+func (l *logReader) reset() {
+	f, err := os.Open(l.filename)
+	if err != nil {
+		fmt.Println(err)
+	}
+	r := bufio.NewReader(f)
+	l.reader.Reset(r)
+}

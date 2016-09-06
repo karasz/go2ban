@@ -5,7 +5,7 @@ Regexp = [
 ''',
 ]
 MaxFail = 3
-TimeVal = 1
+BanTime = 1
 ActionBan = '''
 echo Banning IP <IP>
 '''
