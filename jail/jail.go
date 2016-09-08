@@ -7,29 +7,34 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	//	"sync"
 	"time"
 )
 
 type configJail struct {
 	Name        string
 	LogFile     string
+	TimeFormat  string
 	Regexp      []string
 	MaxFail     int
 	BanTime     int
+	FindTime    int
 	ActionBan   string
 	ActionUnBan string
+	ActionSetup string
 	Enabled     bool
 }
 
 type Jail struct {
 	Name        string
 	LogFile     string
+	TimeFormat  string
 	Regexp      []*regexp.Regexp
 	MaxFail     int
 	BanTime     int
+	FindTime    int
 	ActionBan   string
 	ActionUnBan string
+	ActionSetup string
 	Enabled     bool
 	logreader   *logReader
 	jailees     []*jailee
@@ -70,8 +75,19 @@ func (j *Jail) check(ip string) {
 	}
 }
 
+func (j *Jail) checkFind(toCheck string) bool {
+	to, _ := time.Parse(j.TimeFormat, toCheck)
+	if to.Year() == 0 {
+		nowY := time.Now().Year()
+		to = to.AddDate(nowY, 0, 0)
+	}
+	if time.Since(to) > time.Duration(j.FindTime)*time.Minute {
+		return false
+	}
+	return true
+}
+
 func (j *Jail) executeBan(jj *jailee) {
-	fmt.Println("Banning IP ", jj.ip)
 	fmt.Println(j.ActionBan)
 
 	timer := time.NewTimer(time.Duration(j.BanTime) * time.Minute)
@@ -80,9 +96,12 @@ func (j *Jail) executeBan(jj *jailee) {
 }
 
 func (j *Jail) executeUnBan(jj *jailee) {
-	fmt.Println("UnBanning IP ", jj.ip)
 	fmt.Println(j.ActionUnBan)
 
+}
+
+func (j *Jail) executeSetup() {
+	fmt.Println(j.ActionSetup)
 }
 
 func NewJail(jailfile string) *Jail {
@@ -106,18 +125,23 @@ func NewJail(jailfile string) *Jail {
 		rg = append(rg, rr)
 
 	}
-	return &Jail{
+	j := Jail{
 		Name:        common.Basename(jailfile),
 		logreader:   newLogReader(config.LogFile),
 		LogFile:     config.LogFile,
+		TimeFormat:  config.TimeFormat,
 		Regexp:      rg,
 		MaxFail:     config.MaxFail,
 		BanTime:     config.BanTime,
+		FindTime:    config.FindTime,
 		ActionBan:   config.ActionBan,
 		ActionUnBan: config.ActionUnBan,
+		ActionSetup: config.ActionSetup,
 		Enabled:     config.Enabled,
 		jailees:     make([]*jailee, 0),
 	}
+	j.executeSetup()
+	return &j
 }
 
 func (j *Jail) Run() {
@@ -129,8 +153,10 @@ func (j *Jail) Run() {
 				j.logreader.reset()
 			case z := <-j.logreader.lines:
 				if q, ok := j.matchLine(z); ok {
-					j.Add(q["HOST"])
-					j.check(q["HOST"])
+					if j.checkFind(q["DATETIME"]) {
+						j.Add(q["HOST"])
+						j.check(q["HOST"])
+					}
 				}
 			}
 		}
