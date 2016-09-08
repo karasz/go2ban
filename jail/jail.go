@@ -6,7 +6,9 @@ import (
 	"github.com/naoina/toml"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -41,6 +43,7 @@ type Jail struct {
 }
 
 type jailee struct {
+	q         map[string]string
 	ip        string
 	failcount int
 }
@@ -54,16 +57,17 @@ func (j *Jail) getJailee(ip string) (int, *jailee, bool) {
 	return -1, nil, false
 }
 
-func (j *Jail) Add(ip string) {
+func (j *Jail) Add(q map[string]string) {
+	ip := q["HOST"]
 	if _, jj, ok := j.getJailee(ip); !ok {
-		j.jinit(ip)
+		j.jinit(q)
 	} else {
 		jj.failcount++
 	}
 }
 
-func (j *Jail) jinit(ip string) {
-	ja := jailee{failcount: 1, ip: ip}
+func (j *Jail) jinit(q map[string]string) {
+	ja := jailee{failcount: 1, ip: q["HOST"], q: q}
 	j.jailees = append(j.jailees, &ja)
 }
 
@@ -88,20 +92,63 @@ func (j *Jail) checkFind(toCheck string) bool {
 }
 
 func (j *Jail) executeBan(jj *jailee) {
-	fmt.Println(j.ActionBan)
-
+	cmd := j.parseCommand(j.ActionBan, jj)
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = cmd.Wait()
 	timer := time.NewTimer(time.Duration(j.BanTime) * time.Minute)
 	<-timer.C
 	j.executeUnBan(jj)
 }
 
 func (j *Jail) executeUnBan(jj *jailee) {
-	fmt.Println(j.ActionUnBan)
+	cmd := j.parseCommand(j.ActionUnBan, jj)
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = cmd.Wait()
 
+	if ok := j.remove(jj); !ok {
+		fmt.Println("cannot remove jailee")
+	}
 }
 
 func (j *Jail) executeSetup() {
-	fmt.Println(j.ActionSetup)
+	cmd := j.parseCommand(j.ActionSetup, nil)
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = cmd.Wait()
+}
+
+func (j *Jail) remove(jj *jailee) bool {
+	// we have a slice and concurent access
+	// so we cannot remove it hence we do a soft delete
+	jj.failcount = 0
+	if jj.failcount == 0 {
+		return true
+	}
+	return false
+}
+
+func (j *Jail) parseCommand(cmd string, jj *jailee) *exec.Cmd {
+	bin := strings.Fields(cmd)[0]
+	args := strings.Fields(cmd)[1:]
+	if jj != nil {
+		for i, k := range args {
+			if strings.HasPrefix(k, "<") && strings.HasSuffix(k, ">") {
+				s := strings.TrimPrefix(strings.TrimSuffix(k, ">"), "<")
+				args[i] = jj.q[s]
+			}
+		}
+	}
+	c := exec.Command(bin, strings.Join(args, " "))
+	c.Stdout = os.Stdout
+	return c
 }
 
 func NewJail(jailfile string) *Jail {
@@ -154,7 +201,7 @@ func (j *Jail) Run() {
 			case z := <-j.logreader.lines:
 				if q, ok := j.matchLine(z); ok {
 					if j.checkFind(q["DATETIME"]) {
-						j.Add(q["HOST"])
+						j.Add(q)
 						j.check(q["HOST"])
 					}
 				}

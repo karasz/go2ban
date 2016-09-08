@@ -6,12 +6,13 @@ Regexp = [
 ''',
 ]
 MaxFail = 3
+BanTime = 1
 FindTime = 10
 ActionBan = '''
-echo Banning IP <IP>
+echo Banning IP <HOST>
 '''
 ActionUnBan = '''
-echo Unbanning IP <IP>
+echo Unbanning IP <HOST>
 '''
 ActionSetup = '''
 echo Setting up stuff.
