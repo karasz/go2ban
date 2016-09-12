@@ -42,6 +42,7 @@ type Jail struct {
 	testing     bool
 	logreader   *logReader
 	jailees     []*jailee
+	Cells       map[string]time.Time
 }
 
 type jailee struct {
@@ -86,6 +87,7 @@ func NewJail(jailfile string) *Jail {
 		enabled:     config.Enabled,
 		testing:     config.Testing,
 		jailees:     make([]*jailee, 0),
+		Cells:       make(map[string]time.Time),
 	}
 	j.executeSetup()
 	return &j
@@ -112,6 +114,7 @@ func (j *Jail) add(q map[string]string) {
 func (j *Jail) jinit(q map[string]string) {
 	ja := jailee{failcount: 1, ip: q["HOST"], q: q}
 	j.jailees = append(j.jailees, &ja)
+	j.Cells[q["HOST"]] = time.Now()
 }
 
 func (j *Jail) check(ip string) {
@@ -125,6 +128,7 @@ func (j *Jail) check(ip string) {
 func (j *Jail) remove(jj *jailee) bool {
 	// we have a slice and concurent access
 	// so we cannot remove it hence we do a soft delete
+	delete(j.Cells, jj.ip)
 	jj.failcount = 0
 	if jj.failcount == 0 {
 		return true
