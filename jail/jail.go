@@ -1,15 +1,19 @@
 package jail
 
 import (
+	"bufio"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
-	"github.com/karasz/go2ban/common"
-	"github.com/naoina/toml"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/naoina/toml"
 )
 
 type configJail struct {
@@ -73,7 +77,7 @@ func NewJail(jailfile string) *Jail {
 
 	}
 	j := Jail{
-		name:        common.Basename(jailfile),
+		name:        basename(jailfile),
 		logreader:   newLogReader(config.LogFile),
 		logFile:     config.LogFile,
 		timeFormat:  config.TimeFormat,
@@ -249,4 +253,36 @@ func (j *Jail) matchLine(line string) (map[string]string, bool) {
 		}
 	}
 	return result, false
+}
+
+func sameLog(file string, sum string) bool {
+	f, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	r := bufio.NewReader(f)
+	line, _, er := r.ReadLine()
+	if er != nil {
+		fmt.Println(er)
+		return false
+	}
+
+	hash := md5.Sum(line)
+	strHash := hex.EncodeToString(hash[:])
+
+	if strHash == sum {
+		return true
+	}
+	return false
+}
+
+func basename(s string) string {
+	base := path.Base(s)
+	n := strings.LastIndexByte(base, '.')
+	if n >= 0 {
+		return base[:n]
+	}
+	return base
 }

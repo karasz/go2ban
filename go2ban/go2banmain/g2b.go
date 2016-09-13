@@ -1,4 +1,4 @@
-package main
+package go2banmain
 
 import (
 	"flag"
@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/karasz/go2ban"
 	"github.com/karasz/go2ban/jail"
-	"github.com/karasz/go2ban/utils"
 	"github.com/naoina/toml"
 )
 
@@ -15,11 +15,7 @@ type config struct {
 	Jaildir string
 }
 
-func init() {
-	utils.TrapSignals()
-}
-
-func main() {
+func Run() {
 	var conffile string
 	jailfiles := make([]string, 0)
 	flag.StringVar(&conffile, "f", "/etc/go2ban/g2b.toml", "specify the config file.  defaults to /etc/go2ban/g2b.toml.")
@@ -60,8 +56,11 @@ func main() {
 
 	for _, j := range jailfiles {
 		jail := jail.NewJail(j)
+		go2ban.Srv.Js = append(go2ban.Srv.Js, jail)
 		go jail.Run()
 	}
+
+	go2ban.TrapSignals()
 
 	//for now we just sleep forever
 	select {}
