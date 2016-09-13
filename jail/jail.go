@@ -156,7 +156,7 @@ func (j *Jail) executeSetup() {
 	cmd := j.parseCommand(j.actionSetup, nil)
 
 	if j.testing {
-		fmt.Println(cmd)
+		prettyprint(cmd)
 	} else {
 
 		err := cmd.Start()
@@ -171,7 +171,7 @@ func (j *Jail) executeBan(jj *jailee) {
 	cmd := j.parseCommand(j.actionBan, jj)
 
 	if j.testing {
-		fmt.Println(cmd)
+		prettyprint(cmd)
 	} else {
 		err := cmd.Start()
 		if err != nil {
@@ -189,7 +189,7 @@ func (j *Jail) executeUnBan(jj *jailee) {
 	cmd := j.parseCommand(j.actionUnBan, jj)
 
 	if j.testing {
-		fmt.Println(cmd)
+		prettyprint(cmd)
 	} else {
 		err := cmd.Start()
 		if err != nil {
@@ -285,4 +285,17 @@ func basename(s string) string {
 		return base[:n]
 	}
 	return base
+}
+
+func prettyprint(c *exec.Cmd) {
+	var s string = "In testing mode. If not, would have executed:\n"
+	s += c.Path
+	s += " "
+	for i, w := range c.Args {
+		if i != 0 {
+			s += w
+			s += " "
+		}
+	}
+	fmt.Println(s)
 }
