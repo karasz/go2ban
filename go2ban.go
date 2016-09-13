@@ -14,7 +14,12 @@ var Srv server
 
 func (s *server) DumpCells() {
 	for _, j := range s.Js {
-		fmt.Println(j.Cells)
-		fmt.Println(len(j.Cells))
+		if len(j.Cells) == 0 {
+			fmt.Println("No Cells active")
+		} else {
+			for k, v := range j.Cells {
+				fmt.Println("IP: ", k, "\tFirst observed at: ", v)
+			}
+		}
 	}
 }
