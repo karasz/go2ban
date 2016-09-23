@@ -19,7 +19,6 @@ import (
 type configJail struct {
 	Name        string
 	LogFile     string
-	WhiteList   string
 	TimeFormat  string
 	Regexp      []string
 	MaxFail     int
@@ -82,7 +81,7 @@ func NewJail(jailfile string) *Jail {
 		name:        basename(jailfile),
 		logreader:   newLogReader(config.LogFile),
 		logFile:     config.LogFile,
-		whitelist:   readwhite(config.WhiteList),
+		whitelist:   readwhite(strings.TrimSuffix(jailfile, ".g2b") + ".whitelist"),
 		timeFormat:  config.TimeFormat,
 		regexp:      rg,
 		maxFail:     config.MaxFail,
