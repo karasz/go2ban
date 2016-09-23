@@ -19,6 +19,7 @@ import (
 type configJail struct {
 	Name        string
 	LogFile     string
+	WhiteList   string
 	TimeFormat  string
 	Regexp      []string
 	MaxFail     int
@@ -34,6 +35,7 @@ type configJail struct {
 type Jail struct {
 	name        string
 	logFile     string
+	whitelist   []string
 	timeFormat  string
 	regexp      []*regexp.Regexp
 	maxFail     int
@@ -80,6 +82,7 @@ func NewJail(jailfile string) *Jail {
 		name:        basename(jailfile),
 		logreader:   newLogReader(config.LogFile),
 		logFile:     config.LogFile,
+		whitelist:   readwhite(config.WhiteList),
 		timeFormat:  config.TimeFormat,
 		regexp:      rg,
 		maxFail:     config.MaxFail,
@@ -108,10 +111,12 @@ func (j *Jail) getJailee(ip string) (int, *jailee, bool) {
 
 func (j *Jail) add(q map[string]string) {
 	ip := q["HOST"]
-	if _, jj, ok := j.getJailee(ip); !ok {
-		j.jinit(q)
-	} else {
-		jj.failcount++
+	if !isWhite(ip, j.whitelist) {
+		if _, jj, ok := j.getJailee(ip); !ok {
+			j.jinit(q)
+		} else {
+			jj.failcount++
+		}
 	}
 }
 
@@ -298,4 +303,26 @@ func prettyprint(c *exec.Cmd) {
 		}
 	}
 	fmt.Println(s)
+}
+
+func readwhite(wf string) []string {
+	result := []string{}
+
+	whiteFile, _ := os.Open(wf)
+	defer whiteFile.Close()
+
+	scanner := bufio.NewScanner(whiteFile)
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
+	}
+	return result
+}
+
+func isWhite(ip string, whitelist []string) bool {
+	for _, k := range whitelist {
+		if ip == k {
+			return true
+		}
+	}
+	return false
 }
